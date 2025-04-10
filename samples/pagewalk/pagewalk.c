@@ -47,24 +47,6 @@ static int __init sample_init(void) {
         Each active entry in the PGD table points to a page frame containing an array of page middle directory (PMD) entries
         of type pmd_t, which in turn points to page fames containing page table entries (PTE) of type pte_t, which finally points
         to page frames containing actual user data.
-
-        Linear addresses are broken into parts to yield offsets within the three page table levels and an offset within the
-        actual page. A number of macros are provided for breaking up the linear address into its component parts: SHIFT, SIZE,
-        and MASK.
-            SHIFT macros specify the length in bits that are mapped by each level of the page tables.
-            MASK values can be AND'd with a linear address to mask out all the upper bits, frequently used to determine if a
-            linear address is aligned to a given level within the page table.
-
-        <------------------------------------------------------------->
-        +--------------+---------------+----------------+--------------+
-        | global (PGD) |  middle (PMD) |   table (PTE)  |    offset    |
-        +--------------+---------------+----------------+--------------+
-                            PAGE_MASK                       PAGE_SIZE
-        <-----------------------------------------------><------------->
-                    PMD_MASK                        PMD_SIZE
-        <------------------------------><------------------------------>
-           PGDIR_MASK                     PGDIR_SIZE
-        <--------------><---------------------------------------------->
     */
     pgd_t *pgd;
     p4d_t *p4d;
