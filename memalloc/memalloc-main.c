@@ -279,13 +279,44 @@ static int memalloc_release(struct inode* inode, struct file* file) {
 static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) {
     switch (cmd)
     {
-    case ALLOCATE:    	
-    	//code here
+    case ALLOCATE:
+        //code here
         //refer to the SHAREPAGE and ACCESSPAGE cases to write the code here.
+        /* 
+            alloq_req is type alloc_info, which encapsulates vaddr (unsigned long), num_pages (int), and write (bool)
+            long copy_from_user(void *to, const void __user *from, unsigned long n); 
+            copy_from_user() accepts a destination buffer in kernel space (to), a source buffer from user space (from),
+            and a length defined in bytes (n); returns 0 on success.
+                &alloc_req is the address of alloc_req, a stack-allocated variable inside the kernel
+                arg is passed from user space, and is interpreted as a pointer to user-space data ((void*) arg)
+        */    	
+    	if (copy_from_user((void*) &alloc_req, (void*) arg, sizeof(struct alloc_info))) {
+            printk("User didn't send the right message.\n");
+        }
+
+        /* debug message */
+        printk("IOCTL: allocatepage(%lx, %d, %d)\n", alloc_req.vaddr, alloc_req.num_pages, alloc_req.write);
+
+        kernel_module_allocate_pages(alloc_req);
+        break;
 
     case FREE:    	
     	//code here
-        //refer to the SHAREPAGE and ACCESSPAGE cases to write the code here. 	
+        //refer to the SHAREPAGE and ACCESSPAGE cases to write the code here.
+        /*
+            free_req is type free_info, which encapsulates vaddr (unsigned long)
+            long copy_from_user(void *to, const void __user *from, unsigned long n); 
+        */
+       if (copy_from_user((void*) &free_req, (void*) arg, sizeof(struct free_info))) {
+        printk("User didn't send the right message.\n");
+       }
+       
+       /* debug message */
+       printk("IOCTL: freepage(%lx)\n", free_req.vaddr);
+
+       kernel_module_free_pages(free_req.vaddr);
+       // ^ NOTE: keep an eye on this. there are two functions involving freeing page(s). neither take the full struct free_info type
+       //         as an argument
 
     case SHAREPAGE:
         /* Share a page */
