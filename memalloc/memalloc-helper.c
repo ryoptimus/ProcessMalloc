@@ -77,6 +77,7 @@
 */
 
 /* Project Functions */
+/* installs a new PUD page and edits *p4d to point to it */
 pud_t* memalloc_pud_alloc(p4d_t* p4d, unsigned long vaddr) {
     gfp_t gfp = GFP_KERNEL_ACCOUNT;
     /* get_zeroed_page(): returns a pointer to a new page and fills the page with zeroes */

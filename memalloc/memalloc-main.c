@@ -95,10 +95,51 @@ static int kernel_module_allocate_single_page(unsigned long vaddr, bool write, u
     //code here 
     // You need to perform the full page walk:
     // 1. Get PGD, check if mapped.
+    pgd = pgd_offset(current->mm, vaddr);
+    if (pgd_none(*pgd)) {
+        printk("Error: PGD should always be mapped. Oh Ariana, we're really in it now...\n");
+        return -1;
+    }
+    printk("PGD is allocated.\n");
+
     // 2. Get P4D, if not mapped call memalloc_pud_alloc().
+    p4d = p4d_offset(pgd, vaddr);
+    if (p4d_none(*p4d) || p4d_bad(*p4d)) {
+        printk("No P4D allocated. Page is unmapped. Calling memalloc_pud_alloc()...\n");
+        /* pud_t*  memalloc_pud_alloc(p4d_t* p4d, unsigned long vaddr); */
+        memalloc_pud_alloc(p4d, vaddr);
+    }
+    printk("P4D is allocated.\n");
+
     // 3. Get PUD, if not mapped call memalloc_pmd_alloc().
+    pud = pud_offset(p4d, vaddr);
+    if (pud_none(*pud)) {
+        printk("No PUD allocated. Page is unmapped. Calling memalloc_pmd_alloc()...\n");
+        memalloc_pmd_alloc(pud, vaddr);
+    }
+    printk("PUD is allocated.\n");
+
     // 4. Get PMD, if not mapped call memalloc_pte_alloc().
+    pmd = pmd_offset(pud, vaddr);
+    if (pmd_none(*pmd)) {
+        printk("No PMD allocated. Page is unmapped. Calling memalloc_pte_alloc()...\n");
+        memalloc_pte_alloc(pmd, vaddr);
+    }
+    printk("PMD is allocated.\n");
+
     // 5. Get PTE and check if it's already present. If so, return -1.
+    pte = pte_offset_kernel(pmd, vaddr);
+    if (pte_none(*pte)) {
+        printk("No PTE allocated. Page is unmapped.\n");
+        return -1;
+    }
+    printk("PTE is allocated.\n");
+    if (pte_present(*pte)) {
+        printk("Page is already mapped.\n");
+        return -1;
+    }
+
+    goto not_in_memory;
 
 not_in_memory:
     if (provided_paddr == 0) {
