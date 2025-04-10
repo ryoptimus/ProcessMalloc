@@ -138,7 +138,7 @@ static int kernel_module_allocate_single_page(unsigned long vaddr, bool write, u
         printk("Page is already mapped.\n");
         return -1;
     }
-
+    
     goto not_in_memory;
 
 not_in_memory:
