@@ -4,4 +4,5 @@ Memory management is one of the operating systems’ primary responsibilities. W
 
 In this assignment, I created a kernel module that handles allocation and free requests from a process (similar to mmap and munmap).
 
-Branched from [repo link](https://github.com/ASERISC-Teaching/cse330-public.git), which provided source code as part of CSE330: Operating Systems course at ASU.
+##### Note
+Based on source code from [cse330-public](https://github.com/ASTERISC-Teaching/cse330-public.git), provided in CSE330: Operating Systems at ASU.
