@@ -130,10 +130,10 @@ static int kernel_module_allocate_single_page(unsigned long vaddr, bool write, u
 
     // 5. Get PTE and check if it's already present. If so, return -1.
     pte = pte_offset_kernel(pmd, vaddr);
-    if (pte_none(*pte)) {
+    /* if (pte_none(*pte)) {
         printk("No PTE allocated. Page is unmapped.\n");
         return -1;
-    }
+    } */
     printk("PTE is allocated.\n");
     if (pte_present(*pte)) {
         printk("Page is already mapped.\n");
@@ -249,7 +249,7 @@ static int kernel_module_free_single_page(unsigned long vaddr) {
     }
     
     // 4. If valid, clear the PTE.
-    pte_clear(curent->mm, vaddr, pte);
+    pte_clear(current->mm, vaddr, pte);
     
     // Flush the TLB entry
 #if defined(CONFIG_X86_64)
@@ -295,7 +295,7 @@ static int set_shared_page(struct sharepage_info sharepage_req) {
     /* Get the physical address from the page. */
     struct page *pg = pte_page(*pte);
     shared_paddr = page_to_phys(pg);
-    printk("Physical address to be shared => %px\n", shared_paddr);
+    printk("Physical address to be shared => %lu\n", shared_paddr);
     return 0;
 }
 
@@ -417,7 +417,7 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
         }
 
         /* debug message */
-        printk("IOCTL: allocatepage(%lx, %d, %d)\n", alloc_req.vaddr, alloc_req.num_pages, alloc_req.write);
+        printk("IOCTL: alloc(%lx, %d, %d)\n", alloc_req.vaddr, alloc_req.num_pages, alloc_req.write);
 
         kernel_module_allocate_pages(alloc_req);
         break;
