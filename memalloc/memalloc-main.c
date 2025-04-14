@@ -130,15 +130,9 @@ static int kernel_module_allocate_single_page(unsigned long vaddr, bool write, u
 
     // 5. Get PTE and check if it's already present. If so, return -1.
     pte = pte_offset_kernel(pmd, vaddr);
-    /* if (pte_none(*pte)) {
-        printk("No PTE allocated. Page is unmapped.\n");
-        return -1;
-    } */
     printk("PTE is allocated.\n");
     if (pte_present(*pte)) {
         printk("Page is already mapped.\n");
-        // debug statement for test1
-        printk("Returning -1 from kernel_module_allocate_single_page()...\n");
         return -1;
     }
     
@@ -326,8 +320,6 @@ static int kernel_module_allocate_pages(struct alloc_info alloc_req) {
         if (kernel_module_allocate_single_page(vaddr, write, 0) < 0) {
             // If return value is -1, log allocation failed and return -1
             printk(KERN_ERR "Failed to allocate page %d for vaddr %lu.", num_pages, vaddr);
-            // debug statement for test1
-            printk("Returning -1 from kernel_module_allocate_pages()...\n");
             return -1;
         }
         // Otherwise, update vaddr and num_pages
