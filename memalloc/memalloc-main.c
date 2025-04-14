@@ -402,7 +402,7 @@ static int memalloc_release(struct inode* inode, struct file* file) {
 
 /* IOCTL handler for vmod. */
 static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) {
-    int ret_code;
+    long ret_code = 0;
     switch (cmd)
     {
     case ALLOCATE:
@@ -424,16 +424,7 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
         printk("IOCTL: alloc(%lx, %d, %d)\n", alloc_req.vaddr, alloc_req.num_pages, alloc_req.write);
 
         ret_code = kernel_module_allocate_pages(alloc_req);
-        if (ret_code == -1) {
-            printk("[memalloc_ioctl]: Failed to allocate page because page is already mapped. Returning -1.");
-            // ^ NOTE: technically, allocate_page can return -1 if PGD is not mapped. Maybe change the return code?
-            return -1;
-        } else {
-            break;
-        }
-        // ^ do we need more explicit handling of return codes from kernel_module_allocate_pages()?
-        // e.g.,    -2 means the page limit request has been exceeded, and -3 indicates the allocation
-        //          request limit has been reached
+        break;
 
     case FREE:    	
     	//code here
@@ -450,6 +441,7 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
        printk("IOCTL: freepage(%lx)\n", free_req.vaddr);
 
        kernel_module_free_pages(free_req.vaddr);
+       break;
 
     case SHAREPAGE:
         /* Share a page */
@@ -460,7 +452,7 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
         /* debug message */
         printk("IOCTL: sharepage(%lx, %d, %d)\n", sharepage_req.vaddr, sharepage_req.client_pid, sharepage_req.write);
 
-        set_shared_page(sharepage_req);
+        ret_code = set_shared_page(sharepage_req);
         break;
 
     case ACCESSPAGE:
@@ -474,7 +466,7 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
         /* debug message */
     	printk("IOCTL: accesspage(%lx)\n", accesspage_req.vaddr);
 
-        kernel_module_allocate_single_page(accesspage_req.vaddr, shared_page_write, shared_paddr);
+        ret_code = kernel_module_allocate_single_page(accesspage_req.vaddr, shared_page_write, shared_paddr);
 
         break;
 
@@ -483,8 +475,8 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
         return -1;
     }
     // debug statement
-    printk("Returning 0 from memalloc_ioctl()...\n");
-    return 0;
+    printk("Returning %ld from memalloc_ioctl()...\n", ret_code);
+    return ret_code;
 }
 
 /* Required file ops. */
