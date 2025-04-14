@@ -23,6 +23,15 @@ int main(void);
 bool test_allocate(void){
     struct alloc_info* allocCall;    
     allocCall = malloc(sizeof(struct alloc_info));
+    /* 
+        >> 12 << 12 shifts the address of main 12 bits to the right and then back 12 bits,
+        effectively zero-ing out the lower 12 bits by dividing by 4096 then multiplying by
+        4096
+        this aligns the vaddr on the 4 KB page boundary
+        means allocCall->vaddr is now the start of the page containing the main function
+        in memory
+        because it's already allocated to main, it shouldn't succeed
+    */
     allocCall->vaddr                = (unsigned long) &main >> 12 << 12;
     allocCall->num_pages            = 1;
     allocCall->write                = true;

@@ -130,13 +130,15 @@ static int kernel_module_allocate_single_page(unsigned long vaddr, bool write, u
 
     // 5. Get PTE and check if it's already present. If so, return -1.
     pte = pte_offset_kernel(pmd, vaddr);
-    if (pte_none(*pte)) {
+    /* if (pte_none(*pte)) {
         printk("No PTE allocated. Page is unmapped.\n");
         return -1;
-    }
+    } */
     printk("PTE is allocated.\n");
     if (pte_present(*pte)) {
         printk("Page is already mapped.\n");
+        // debug statement for test1
+        printk("Returning -1 from kernel_module_allocate_single_page()...\n");
         return -1;
     }
     
@@ -249,7 +251,7 @@ static int kernel_module_free_single_page(unsigned long vaddr) {
     }
     
     // 4. If valid, clear the PTE.
-    pte_clear(curent->mm, vaddr, pte);
+    pte_clear(current->mm, vaddr, pte);
     
     // Flush the TLB entry
 #if defined(CONFIG_X86_64)
@@ -295,7 +297,7 @@ static int set_shared_page(struct sharepage_info sharepage_req) {
     /* Get the physical address from the page. */
     struct page *pg = pte_page(*pte);
     shared_paddr = page_to_phys(pg);
-    printk("Physical address to be shared => %px\n", shared_paddr);
+    printk("Physical address to be shared => %lu\n", shared_paddr);
     return 0;
 }
 
@@ -317,13 +319,15 @@ static int kernel_module_allocate_pages(struct alloc_info alloc_req) {
     }
 
     /* Only allocate maximum allocation pages */
-    int ret = 0;
+    // int ret = 0;     // <- unused variable
     while (num_pages > 0) {
         //code here
         // Call kernel_module_allocate_single_page function
         if (kernel_module_allocate_single_page(vaddr, write, 0) < 0) {
             // If return value is -1, log allocation failed and return -1
-            printk(KERN_ERR "Failed to allocate page %d for vaddr %lu", num_pages, vaddr);
+            printk(KERN_ERR "Failed to allocate page %d for vaddr %lu.", num_pages, vaddr);
+            // debug statement for test1
+            printk("Returning -1 from kernel_module_allocate_pages()...\n");
             return -1;
         }
         // Otherwise, update vaddr and num_pages
@@ -398,7 +402,7 @@ static int memalloc_release(struct inode* inode, struct file* file) {
 
 /* IOCTL handler for vmod. */
 static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) {
-    // TODO: test with test0.c
+    int ret_code;
     switch (cmd)
     {
     case ALLOCATE:
@@ -417,10 +421,19 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
         }
 
         /* debug message */
-        printk("IOCTL: allocatepage(%lx, %d, %d)\n", alloc_req.vaddr, alloc_req.num_pages, alloc_req.write);
+        printk("IOCTL: alloc(%lx, %d, %d)\n", alloc_req.vaddr, alloc_req.num_pages, alloc_req.write);
 
-        kernel_module_allocate_pages(alloc_req);
-        break;
+        ret_code = kernel_module_allocate_pages(alloc_req);
+        if (ret_code == -1) {
+            printk("[memalloc_ioctl]: Failed to allocate page because page is already mapped. Returning -1.");
+            // ^ NOTE: technically, allocate_page can return -1 if PGD is not mapped. Maybe change the return code?
+            return -1;
+        } else {
+            break;
+        }
+        // ^ do we need more explicit handling of return codes from kernel_module_allocate_pages()?
+        // e.g.,    -2 means the page limit request has been exceeded, and -3 indicates the allocation
+        //          request limit has been reached
 
     case FREE:    	
     	//code here
@@ -469,6 +482,8 @@ static long memalloc_ioctl(struct file *f, unsigned int cmd, unsigned long arg) 
         printk("Error: incorrect IOCTL command.\n");
         return -1;
     }
+    // debug statement
+    printk("Returning 0 from memalloc_ioctl()...\n");
     return 0;
 }
 
